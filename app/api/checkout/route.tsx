@@ -1,20 +1,24 @@
-import { NextApiRequest, NextApiResponse } from "next";
+import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: "2023-10-16",
+  // apiVersion: "2023-10-16",
 });
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
+export async function POST(req: Request) {
   try {
-    const { amount, currency } = req.body;
+    // ✅ Read the request body only once
+    const body = await req.json();
+
+    // ✅ Destructure values safely
+    const { amount, currency } = body || {};
+
+    if (!amount || !currency) {
+      return NextResponse.json(
+        { error: "Amount and currency are required" },
+        { status: 400 }
+      );
+    }
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
@@ -22,8 +26,15 @@ export default async function handler(
       payment_method_types: ["card"],
     });
 
-    res.status(200).json({ clientSecret: paymentIntent.client_secret });
+    return NextResponse.json(
+      { clientSecret: paymentIntent.client_secret },
+      { status: 200 }
+    );
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    console.error("Stripe Error:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

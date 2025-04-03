@@ -40,3 +40,10 @@ a {
     color-scheme: dark;
   }
 }
+
+.CardField--ltr .CardField-input-wrapper {
+  background-color: white;
+}
+.InputContainer .InputElement {
+  color: white !important;
+}
